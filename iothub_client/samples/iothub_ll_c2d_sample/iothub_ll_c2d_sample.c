@@ -43,8 +43,29 @@
 #include "certs.h"
 #endif // SET_TRUSTED_CERT_IN_SAMPLES
 
-/* Paste in the your iothub connection string  */
+/* Paste in the your x509 iothub connection string  */
+/*  "HostName=<host_name>;DeviceId=<device_id>;x509=true"                      */
 static const char* connectionString = "[device connection string]";
+
+static const char* x509certificate =
+    "-----BEGIN CERTIFICATE-----""\n"
+    "MIICpDCCAYwCCQCfIjBnPxs5TzANBgkqhkiG9w0BAQsFADAUMRIwEAYDVQQDDAls""\n"
+    "b2NhbGhvc3QwHhcNMTYwNjIyMjM0MzI3WhcNMTYwNjIzMjM0MzI3WjAUMRIwEAYD""\n"
+    "...""\n"
+    "+s88wBF907s1dcY45vsG0ldE3f7Y6anGF60nUwYao/fN/eb5FT5EHANVMmnK8zZ2""\n"
+    "tjWUt5TFnAveFoQWIoIbtzlTbOxUFwMrQFzFXOrZoDJmHNWc2u6FmVAkowoOSHiE""\n"
+    "dkyVdoGPCXc=""\n"
+    "-----END CERTIFICATE-----";
+
+static const char* x509privatekey =
+    "-----BEGIN RSA PRIVATE KEY-----""\n"
+    "MIIEpQIBAAKCAQEA0zKK+Uu5I0nXq2V6+2gbdCsBXZ6j1uAgU/clsCohEAek1T8v""\n"
+    "qj2tR9Mz9iy9RtXPMHwzcQ7aXDaz7RbHdw7tYXqSw8iq0Mxq2s3p4mo6gd5vEOiN""\n"
+    "...""\n"
+    "EyePNmkCgYEAng+12qvs0de7OhkTjX9FLxluLWxfN2vbtQCWXslLCG+Es/ZzGlNF""\n"
+    "SaqVID4EAUgUqFDw0UO6SKLT+HyFjOr5qdHkfAmRzwE/0RBN69g2qLDN3Km1Px/k""\n"
+    "xyJyxc700uV1eKiCdRLRuCbUeecOSZreh8YRIQQXoG8uotO5IttdVRc=""\n"
+    "-----END RSA PRIVATE KEY-----";
 
 #define MESSAGE_COUNT        3
 static bool g_continueRunning = true;
@@ -145,8 +166,8 @@ int main(void)
     {
         // Set any option that are neccessary.
         // For available options please see the iothub_sdk_options.md documentation
-        //bool traceOn = true;
-        //IoTHubDeviceClient_LL_SetOption(device_ll_handle, OPTION_LOG_TRACE, &traceOn);
+        bool traceOn = true;
+        IoTHubDeviceClient_LL_SetOption(device_ll_handle, OPTION_LOG_TRACE, &traceOn);
 #ifdef SET_TRUSTED_CERT_IN_SAMPLES
         // Setting the Trusted Certificate. This is only necessary on systems without
         // built in certificate stores.
@@ -160,6 +181,16 @@ int main(void)
         bool urlDecodeOn = true;
         (void)IoTHubDeviceClient_LL_SetOption(device_ll_handle, OPTION_AUTO_URL_ENCODE_DECODE, &urlDecodeOn);
 #endif
+
+      // Set the X509 certificates in the SDK
+      if (
+          (IoTHubDeviceClient_LL_SetOption(device_ll_handle, OPTION_X509_CERT, x509certificate) != IOTHUB_CLIENT_OK) ||
+          (IoTHubDeviceClient_LL_SetOption(device_ll_handle, OPTION_X509_PRIVATE_KEY, x509privatekey) != IOTHUB_CLIENT_OK)
+          )
+      {
+        printf("failure to set options for x509, aborting\r\n");
+        return 1;
+      }
 
 #ifdef SAMPLE_HTTP
         unsigned int timeout = 241000;
